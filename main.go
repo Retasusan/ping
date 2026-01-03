@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	size := flag.Int("s", 56, "ICMP payload size in bytes")
 	flag.Parse()
 
 	if flag.NArg() != 1 {
@@ -36,11 +37,13 @@ func main() {
 	dst := &syscall.SockaddrInet4{}
 	copy(dst.Addr[:], ip)
 
+	payload := make([]byte, *size)
+
 	echo := &ICMPEcho{
 		Type:       8,
 		Code:       0,
 		Identifier: 0x1234,
-		Data:       []byte("hello"),
+		Data:       payload,
 	}
 
 	for i := 0; ; i++ {
@@ -59,7 +62,8 @@ func main() {
 		rtt := time.Since(start)
 
 		fmt.Printf(
-			"reply from %d.%d.%d.%d: icmp_seq=%3d time=%-15v\n",
+			"%d bytes from %d.%d.%d.%d: icmp_seq=%3d time=%-15v\n",
+			8+len(payload),
 			from.Addr[0], from.Addr[1], from.Addr[2], from.Addr[3],
 			seq, rtt,
 		)
