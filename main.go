@@ -26,7 +26,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer syscall.Close(fd)
+
+	defer func() {
+		if err := syscall.Close(fd); err != nil {
+			log.Println("close failed:", err)
+		}
+	}()
 
 	dst := &syscall.SockaddrInet4{}
 	copy(dst.Addr[:], ip)
