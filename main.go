@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"syscall"
+	"time"
 )
 
 type ICMPEcho struct {
@@ -97,55 +98,61 @@ func main() {
 		Data:       []byte("hello"),
 	}
 
-	pkt := echo.MarshalWithChecksum()
-	fmt.Printf("send pkt: % x\n", pkt)
-
 	dst := &syscall.SockaddrInet4{
 		Port: 0,                   //ICMPなので不使用
 		Addr: [4]byte{8, 8, 8, 8}, //一旦google決めうち
 	}
 
-	err = syscall.Sendto(fd, pkt, 0, dst)
-	if err != nil {
-		log.Fatal("sendto failed: ", err)
-	}
-
-	buf := make([]byte, 1500) //MTUサイズ
-
+	i := 0
 	for {
-		n, from, err := syscall.Recvfrom(fd, buf, 0)
+		i++
+		echo.Sequence = uint16(i)
+		pkt := echo.MarshalWithChecksum()
+
+		fmt.Printf("send seq=%d\n", i)
+
+		err = syscall.Sendto(fd, pkt, 0, dst)
 		if err != nil {
-			log.Fatal("recvfrom failed:", err)
+			log.Fatal("sendto failed: ", err)
 		}
 
-		// 先頭1byte: 4bit: Version, 4bit: IHL
-		ipHeaderLen := int(buf[0]&0x0F) * 4
-		if n < ipHeaderLen+8 {
-			continue
+		buf := make([]byte, 1500) //MTUサイズ
+
+		for {
+			n, from, err := syscall.Recvfrom(fd, buf, 0)
+			if err != nil {
+				log.Fatal("recvfrom failed:", err)
+			}
+
+			// 先頭1byte: 4bit: Version, 4bit: IHL
+			ipHeaderLen := int(buf[0]&0x0F) * 4
+			if n < ipHeaderLen+8 {
+				continue
+			}
+
+			icmp := buf[ipHeaderLen:n]
+
+			icmpType := icmp[0]
+
+			if icmpType != 0 {
+				continue // Echo Reply以外のICMPは無視する
+			}
+
+			id := binary.BigEndian.Uint16(icmp[4:6])
+			seq := binary.BigEndian.Uint16(icmp[6:8])
+
+			if id != echo.Identifier {
+				continue // 自分の送信したものではないものは無視
+			}
+
+			if sa, ok := from.(*syscall.SockaddrInet4); ok {
+				fmt.Printf("Echo Reply from %d.%d.%d.%d: seq=%d data=%q\n",
+					sa.Addr[0], sa.Addr[1], sa.Addr[2], sa.Addr[3],
+					seq, icmp[8:],
+				)
+			}
+			break
 		}
-
-		icmp := buf[ipHeaderLen:n]
-
-		icmpType := icmp[0]
-
-		if icmpType != 0 {
-			continue // Echo Reply以外のICMPは無視する
-		}
-
-		id := binary.BigEndian.Uint16(icmp[4:6])
-		seq := binary.BigEndian.Uint16(icmp[6:8])
-
-		if id != echo.Identifier {
-			continue // 自分の送信したものではないものは無視
-		}
-
-		if sa, ok := from.(*syscall.SockaddrInet4); ok {
-			fmt.Printf("Echo Reply from %d.%d.%d.%d: seq=%d data=%q\n",
-				sa.Addr[0], sa.Addr[1], sa.Addr[2], sa.Addr[3],
-				seq, icmp[8:],
-			)
-		}
-		fmt.Println("ICMP Echo Request sent", fd)
+		time.Sleep(1 * time.Second)
 	}
-
 }
