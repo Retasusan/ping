@@ -7,3 +7,7 @@
 - ICMP Echo Requestを送る
 - ICMP Echo Reqlyを受け取って表示する
 - 相手のIPv4アドレスを指定して送信する
+
+## 使い方
+- リポジトリをクローンする
+- `sudo go run . <IPv4 アドレス>`をする
