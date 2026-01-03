@@ -6,6 +6,15 @@ import (
 	"syscall"
 )
 
+type ICMPEcho struct {
+	Type       uint8
+	Code       uint8
+	Checksum   uint16
+	Identifier uint16
+	Sequence   uint16
+	Data       []byte
+}
+
 func main() {
 	fd, err := syscall.Socket(
 		syscall.AF_INET,
