@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"log"
+	"net"
+	"os"
 	"syscall"
 	"time"
 )
@@ -74,6 +77,24 @@ func (e *ICMPEcho) MarshalWithChecksum() []byte {
 }
 
 func main() {
+	flag.Parse()
+
+	if flag.NArg() != 1 {
+		log.Fatalf("usage: %s <IPv4 Address>", os.Args[0])
+	}
+
+	dstIP := flag.Arg(0)
+
+	ip := net.ParseIP(dstIP)
+	if ip == nil {
+		log.Fatalf("invalid IP address: %s", dstIP)
+	}
+
+	ip = ip.To4()
+	if ip == nil {
+		log.Fatalf("not an IPv4 address: %s", dstIP)
+	}
+
 	fd, err := syscall.Socket(
 		syscall.AF_INET,
 		syscall.SOCK_RAW,
@@ -99,17 +120,15 @@ func main() {
 	}
 
 	dst := &syscall.SockaddrInet4{
-		Port: 0,                   //ICMPなので不使用
-		Addr: [4]byte{8, 8, 8, 8}, //一旦google決めうち
+		Port: 0,
 	}
+	copy(dst.Addr[:], ip)
 
 	i := 0
 	for {
 		i++
 		echo.Sequence = uint16(i)
 		pkt := echo.MarshalWithChecksum()
-
-		fmt.Printf("send seq=%d\n", i)
 
 		err = syscall.Sendto(fd, pkt, 0, dst)
 		if err != nil {
