@@ -43,7 +43,7 @@ func main() {
 		Data:       []byte("hello"),
 	}
 
-	for i := 1; ; i++ {
+	for i := 0; ; i++ {
 		echo.Sequence = uint16(i)
 		start := time.Now()
 
@@ -51,7 +51,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		seq, data, from, err := recvPing(fd, echo.Identifier)
+		seq, _, from, err := recvPing(fd, echo.Identifier)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -59,9 +59,9 @@ func main() {
 		rtt := time.Since(start)
 
 		fmt.Printf(
-			"reply from %d.%d.%d.%d: seq=%d time=%v data=%q\n",
+			"reply from %d.%d.%d.%d: icmp_seq=%3d time=%-15v\n",
 			from.Addr[0], from.Addr[1], from.Addr[2], from.Addr[3],
-			seq, rtt, data,
+			seq, rtt,
 		)
 
 		time.Sleep(time.Second)
