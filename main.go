@@ -98,7 +98,17 @@ func main() {
 	}
 
 	pkt := echo.MarshalWithChecksum()
-	fmt.Printf("% x\n", pkt)
+	fmt.Println("send pkt: % x\n", pkt)
 
-	fmt.Println("raw socket opened:", fd)
+	dst := &syscall.SockaddrInet4{
+		Port: 0,                   //ICMPなので不使用
+		Addr: [4]byte{8, 8, 8, 8}, //一旦google決めうち
+	}
+
+	err = syscall.Sendto(fd, pkt, 0, dst)
+	if err != nil {
+		log.Fatal("sendto failed: ", err)
+	}
+
+	fmt.Println("ICMP Echo Request sent", fd)
 }
