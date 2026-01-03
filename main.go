@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	count := flag.Int("c", 0, "number of echo requests to send (0 means infinite)")
 	size := flag.Int("s", 56, "ICMP payload size in bytes")
 	flag.Parse()
 
@@ -46,7 +47,7 @@ func main() {
 		Data:       payload,
 	}
 
-	for i := 0; ; i++ {
+	for i := 0; *count == 0 || i < *count; i++ {
 		echo.Sequence = uint16(i)
 		start := time.Now()
 
