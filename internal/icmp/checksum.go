@@ -1,4 +1,4 @@
-package main
+package icmp
 
 func icmpChecksum(b []byte) uint16 {
 	var sum uint32

@@ -1,12 +1,14 @@
-package main
+package ping
 
 import (
 	"encoding/binary"
 	"syscall"
 	"time"
+
+	"github.com/Retasusan/ping/internal/icmp"
 )
 
-func sendPing(fd int, echo *ICMPEcho, dst *syscall.SockaddrInet4) error {
+func SendPing(fd int, echo *icmp.ICMPEcho, dst *syscall.SockaddrInet4) error {
 	pkt := echo.MarshalWithChecksum()
 	return syscall.Sendto(fd, pkt, 0, dst)
 }
@@ -60,7 +62,7 @@ func recvPingAsync(fd int, id uint16, ch chan<- recvResult) {
 	}
 }
 
-func recvPingWithTimeout(fd int, id uint16, timeout time.Duration) (uint16, []byte, *syscall.SockaddrInet4, error) {
+func RecvPingWithTimeout(fd int, id uint16, timeout time.Duration) (uint16, []byte, *syscall.SockaddrInet4, error) {
 	ch := make(chan recvResult, 1)
 
 	go recvPingAsync(fd, id, ch)

@@ -8,6 +8,9 @@ import (
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/Retasusan/ping/internal/icmp"
+	"github.com/Retasusan/ping/internal/ping"
 )
 
 func main() {
@@ -41,7 +44,7 @@ func main() {
 
 	payload := make([]byte, *size)
 
-	echo := &ICMPEcho{
+	echo := &icmp.ICMPEcho{
 		Type:       8,
 		Code:       0,
 		Identifier: 0x1234,
@@ -52,11 +55,11 @@ func main() {
 		echo.Sequence = uint16(i)
 		start := time.Now()
 
-		if err := sendPing(fd, echo, dst); err != nil {
+		if err := ping.SendPing(fd, echo, dst); err != nil {
 			log.Fatal(err)
 		}
 
-		seq, _, from, err := recvPingWithTimeout(
+		seq, _, from, err := ping.RecvPingWithTimeout(
 			fd,
 			echo.Identifier,
 			time.Duration(*timeout)*time.Second,
