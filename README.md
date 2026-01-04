@@ -22,7 +22,7 @@
 
 ## 参考
 
-- [RFC 792}](https://www.rfc-editor.org/info/rfc792)
+- [RFC 792](https://www.rfc-editor.org/info/rfc792)
 - [Wikipedia Internet Control Message Protocol](https://ja.wikipedia.org/wiki/Internet_Control_Message_Protocol)
 
 ## 注意
