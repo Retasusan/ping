@@ -13,6 +13,7 @@ import (
 func main() {
 	count := flag.Int("c", 0, "number of echo requests to send (0 means infinite)")
 	size := flag.Int("s", 56, "ICMP payload size in bytes")
+	timeout := flag.Int("W", 1, "timeout in seconds")
 	flag.Parse()
 
 	if flag.NArg() != 1 {
@@ -55,7 +56,17 @@ func main() {
 			log.Fatal(err)
 		}
 
-		seq, _, from, err := recvPing(fd, echo.Identifier)
+		seq, _, from, err := recvPingWithTimeout(
+			fd,
+			echo.Identifier,
+			time.Duration(*timeout)*time.Second,
+		)
+
+		if err == syscall.ETIMEDOUT {
+			fmt.Printf("Request timeout for icmp_seq %d\n", echo.Sequence)
+			continue
+		}
+
 		if err != nil {
 			log.Fatal(err)
 		}
